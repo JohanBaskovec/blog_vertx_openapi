@@ -1,7 +1,7 @@
 package com.jb.blog.services;
 
 import com.jb.blog.persistence.ArticleRepositoryImpl;
-import io.swagger.client.model.Article;
+import org.openapitools.vertxweb.server.model.Article;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Transaction;
 import org.junit.Test;

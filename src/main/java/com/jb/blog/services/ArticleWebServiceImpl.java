@@ -2,7 +2,7 @@ package com.jb.blog.services;
 
 import com.jb.blog.persistence.ArticleRepository;
 import com.jb.blog.persistence.ArticleRepositoryFactory;
-import io.swagger.client.model.Article;
+import org.openapitools.vertxweb.server.model.Article;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;

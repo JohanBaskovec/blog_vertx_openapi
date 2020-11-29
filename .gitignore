@@ -74,3 +74,4 @@ fabric.properties
 target
 
 swagger-codegen-cli.jar
+openapi-generator-cli-4.3.1.jar

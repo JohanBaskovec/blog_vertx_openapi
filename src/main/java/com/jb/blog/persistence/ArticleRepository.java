@@ -1,6 +1,6 @@
 package com.jb.blog.persistence;
 
-import io.swagger.client.model.Article;
+import org.openapitools.vertxweb.server.model.Article;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 

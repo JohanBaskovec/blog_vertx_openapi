@@ -1,6 +1,6 @@
 package com.jb.blog.services;
 
-import io.swagger.client.model.Article;
+import org.openapitools.vertxweb.server.model.Article;
 import io.vertx.sqlclient.Row;
 
 public class ArticleDbConverterImpl implements ArticleDbConverter {

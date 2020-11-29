@@ -1,7 +1,7 @@
 package com.jb.blog.persistence;
 
 import com.jb.blog.services.ArticleDbConverter;
-import io.swagger.client.model.Article;
+import org.openapitools.vertxweb.server.model.Article;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
