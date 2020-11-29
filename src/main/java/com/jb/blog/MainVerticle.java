@@ -1,14 +1,12 @@
 package com.jb.blog;
 
-import com.jb.blog.persistence.*;
+import com.jb.blog.persistence.ArticleRepositoryFactory;
+import com.jb.blog.persistence.ArticleRepositoryFactoryImpl;
 import com.jb.blog.services.ArticleDbConverter;
 import com.jb.blog.services.ArticleDbConverterImpl;
 import com.jb.blog.services.ArticleWebService;
 import com.jb.blog.services.ArticleWebServiceImpl;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -22,13 +20,17 @@ import io.vertx.pgclient.PgPool;
 import io.vertx.serviceproxy.ServiceBinder;
 import io.vertx.sqlclient.PoolOptions;
 
+import java.time.Duration;
+import java.time.Instant;
+
 public class MainVerticle extends AbstractVerticle {
 
-    HttpServer server;
-    ServiceBinder serviceBinder;
+    private static Instant start;
+    private HttpServer server;
+    private ServiceBinder serviceBinder;
 
-    MessageConsumer<JsonObject> consumer;
-    PgPool pool;
+    private MessageConsumer<JsonObject> consumer;
+    private PgPool pool;
 
     private Future<Void> startHttpServer() {
         String confFilePath = System.getenv("BLOG_CONF");
@@ -80,11 +82,13 @@ public class MainVerticle extends AbstractVerticle {
                     }
                 });
                 server = vertx.createHttpServer(new HttpServerOptions().setPort(8081).setHost("localhost"));
-                server.requestHandler(router).listen(ar -> {
-                    if (ar.succeeded()) {
+                server.requestHandler(router).listen((AsyncResult<HttpServer> httpServer) -> {
+                    Duration duration = Duration.between(start, Instant.now());
+                    System.out.println("Server ready! Startup time: " + duration.toMillis() + " milliseconds.");
+                    if (httpServer.succeeded()) {
                         promise.complete();
                     } else {
-                        promise.fail(ar.cause());
+                        promise.fail(httpServer.cause());
                     }
                 });
             } else {
@@ -107,6 +111,7 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     public static void main(String[] args) {
+        start = Instant.now();
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(new MainVerticle());
     }
