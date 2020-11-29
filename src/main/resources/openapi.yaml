@@ -1,0 +1,78 @@
+openapi: 3.0.1
+info:
+  title: Blog
+  description: ''
+  contact:
+    email: johan@johanbaskovec.fr
+  version: 0.0.0
+paths:
+  /article/{id}:
+    get:
+      description: Get an article
+      operationId: getArticleById
+      "x-vertx-event-bus": article_service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ObjectId'
+      responses:
+        200:
+          description: An article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+  /article:
+    post:
+      description: Insert an article
+      operationId: insertArticle
+      "x-vertx-event-bus": article_service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Article'
+      responses:
+        200:
+          description: An article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+    get:
+      description: Get all the articles
+      operationId: getAllArticles
+      "x-vertx-event-bus": article_service
+      responses:
+        200:
+          description: All the articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Article'
+
+components:
+  schemas:
+    ObjectId:
+      type: string
+      nullable: false
+    Article:
+      type: object
+      required:
+        - id
+        - title
+        - content
+      properties:
+        id:
+          $ref: '#/components/schemas/ObjectId'
+        title:
+          type: string
+          nullable: false
+        content:
+          type: string
+          nullable: false
