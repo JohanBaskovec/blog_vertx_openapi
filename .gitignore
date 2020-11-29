@@ -72,3 +72,5 @@ fabric.properties
 
 
 target
+
+swagger-codegen-cli.jar
