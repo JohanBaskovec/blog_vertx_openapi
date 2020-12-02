@@ -21,6 +21,12 @@ public interface ArticleWebService {
             Handler<AsyncResult<OperationResponse>> resultHandler
     );
 
+    void updateArticle(
+            JsonObject body,
+            OperationRequest context,
+            Handler<AsyncResult<OperationResponse>> resultHandler
+    );
+
     void getAllArticles(
             OperationRequest context,
             Handler<AsyncResult<OperationResponse>> resultHandler

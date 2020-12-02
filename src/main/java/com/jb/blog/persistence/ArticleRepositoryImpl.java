@@ -65,6 +65,21 @@ public class ArticleRepositoryImpl implements ArticleRepository {
                 });
     }
 
+    public void updateArticle(Article article, Handler<AsyncResult<Void>> handler) {
+        PreparedQuery<RowSet<Row>> preparedQuery = transaction.preparedQuery(
+                "update article set title = $1, content = $2 where id = $3"
+        );
+        preparedQuery.execute(
+                Tuple.of(article.getTitle(), article.getContent(), article.getId()),
+                event -> {
+                    if (event.failed()) {
+                        handler.handle(Future.failedFuture(event.cause()));
+                        return;
+                    }
+                    handler.handle(Future.succeededFuture());
+                });
+    }
+
     @Override
     public void getAllArticles(Handler<AsyncResult<List<Article>>> handler) {
         PreparedQuery<RowSet<Row>> preparedQuery = transaction.preparedQuery(

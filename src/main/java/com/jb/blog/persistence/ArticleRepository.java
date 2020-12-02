@@ -13,4 +13,5 @@ public interface ArticleRepository {
     );
     void getArticleById(String id, Handler<AsyncResult<Article>> resultHandler);
     void getAllArticles(Handler<AsyncResult<List<Article>>> resultHandler);
+    void updateArticle(Article article, Handler<AsyncResult<Void>> handler);
 }

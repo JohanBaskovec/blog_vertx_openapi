@@ -32,6 +32,7 @@ public class ArticleWebServiceImplTest {
     private Transaction transaction;
 
     private ArticleRepository articleRepository;
+    private ArticleMapper articleMapper;
 
     @Before
     public void beforeEach() {
@@ -40,8 +41,9 @@ public class ArticleWebServiceImplTest {
         handler = mock(Handler.class);
         transaction = mock(Transaction.class);
         articleRepository = mock(ArticleRepository.class);
+        articleMapper = mock(ArticleMapper.class);
         when(articleRepositoryFactory.create(transaction)).thenReturn(articleRepository);
-        articleWebService = new ArticleWebServiceImpl(pool, articleRepositoryFactory);
+        articleWebService = new ArticleWebServiceImpl(pool, articleRepositoryFactory, articleMapper);
         operationRequest = mock(OperationRequest.class);
     }
 
@@ -210,6 +212,8 @@ public class ArticleWebServiceImplTest {
     public void insertArticleWhenItWorks() {
         mockSuccessfulPoolBegin();
         JsonObject body = new JsonObject();
+        Article article = new Article();
+        when(articleMapper.fromJson(body)).thenReturn(article);
         doAnswer(invocationOnMock -> {
             Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(1);
             handler.handle(Future.succeededFuture());
@@ -229,6 +233,8 @@ public class ArticleWebServiceImplTest {
     public void insertArticleWhenThereIsAnErrorDuringInsert() {
         mockSuccessfulPoolBegin();
         JsonObject body = new JsonObject();
+        Article article = new Article();
+        when(articleMapper.fromJson(body)).thenReturn(article);
         Exception exception = new RuntimeException();
         doAnswer(invocationOnMock -> {
             Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(1);
@@ -251,6 +257,122 @@ public class ArticleWebServiceImplTest {
         mockFailedPoolBegin(exception);
         JsonObject body = new JsonObject();
         articleWebService.insertArticle(body, operationRequest, handler);
+
+        ArgumentCaptor<Future> futureArgumentCaptor = ArgumentCaptor.forClass(Future.class);
+        verify(handler).handle(futureArgumentCaptor.capture());
+        Future future = futureArgumentCaptor.getValue();
+        assertTrue(future.failed());
+        assertSame(exception, future.cause());
+    }
+
+    @Test
+    public void updateArticleWhenItWorks() {
+        mockSuccessfulPoolBegin();
+        JsonObject body = new JsonObject();
+        Article article = new Article();
+        article.setId("id");
+        when(articleMapper.fromJson(body)).thenReturn(article);
+        doAnswer(invocationOnMock -> {
+            Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(1);
+            handler.handle(Future.succeededFuture(article));
+            return null;
+        }).when(articleRepository).getArticleById(eq(article.getId()), any(Handler.class));
+        doAnswer(invocationOnMock -> {
+            Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(1);
+            handler.handle(Future.succeededFuture());
+            return null;
+        }).when(articleRepository).updateArticle(any(Article.class), any(Handler.class));
+
+        articleWebService.updateArticle(body, operationRequest, handler);
+
+        verify(transaction).commit();
+        ArgumentCaptor<Future> futureArgumentCaptor = ArgumentCaptor.forClass(Future.class);
+        verify(handler).handle(futureArgumentCaptor.capture());
+        Future future = futureArgumentCaptor.getValue();
+        OperationResponse operationResponse = (OperationResponse) future.result();
+        assertEquals(204, (int)operationResponse.getStatusCode());
+    }
+
+    @Test
+    public void updateArticleWhenArticleDoesntExist() {
+        mockSuccessfulPoolBegin();
+        JsonObject body = new JsonObject();
+        Article article = new Article();
+        article.setId("id");
+        when(articleMapper.fromJson(body)).thenReturn(article);
+        doAnswer(invocationOnMock -> {
+            Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(1);
+            handler.handle(Future.succeededFuture(null));
+            return null;
+        }).when(articleRepository).getArticleById(eq(article.getId()), any(Handler.class));
+
+        articleWebService.updateArticle(body, operationRequest, handler);
+
+        verify(transaction).rollback();
+        ArgumentCaptor<Future> futureArgumentCaptor = ArgumentCaptor.forClass(Future.class);
+        verify(handler).handle(futureArgumentCaptor.capture());
+        Future future = futureArgumentCaptor.getValue();
+        OperationResponse operationResponse = (OperationResponse) future.result();
+        assertEquals(404, (int)operationResponse.getStatusCode());
+    }
+
+    @Test
+    public void updateArticleWhenThereIsAnErrorDuringGetArticleById() {
+        mockSuccessfulPoolBegin();
+        JsonObject body = new JsonObject();
+        Article article = new Article();
+        when(articleMapper.fromJson(body)).thenReturn(article);
+        Exception exception = new RuntimeException();
+        doAnswer(invocationOnMock -> {
+            Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(1);
+            handler.handle(Future.failedFuture(exception));
+            return null;
+        }).when(articleRepository).getArticleById(eq(article.getId()), any(Handler.class));
+
+        articleWebService.updateArticle(body, operationRequest, handler);
+
+        verify(transaction).rollback();
+        ArgumentCaptor<Future> futureArgumentCaptor = ArgumentCaptor.forClass(Future.class);
+        verify(handler).handle(futureArgumentCaptor.capture());
+        Future future = futureArgumentCaptor.getValue();
+        assertSame(exception, future.cause());
+    }
+
+    @Test
+    public void updateArticleWhenThereIsAnErrorDuringInsert() {
+        mockSuccessfulPoolBegin();
+        JsonObject body = new JsonObject();
+        Article article = new Article();
+        article.setId("id");
+        when(articleMapper.fromJson(body)).thenReturn(article);
+        doAnswer(invocationOnMock -> {
+            Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(1);
+            handler.handle(Future.succeededFuture(article));
+            return null;
+        }).when(articleRepository).getArticleById(eq(article.getId()), any(Handler.class));
+        Exception exception = new RuntimeException();
+        doAnswer(invocationOnMock -> {
+            Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(1);
+            handler.handle(Future.failedFuture(exception));
+            return null;
+        }).when(articleRepository).updateArticle(any(Article.class), any(Handler.class));
+
+        articleWebService.updateArticle(body, operationRequest, handler);
+
+        verify(transaction).rollback();
+        ArgumentCaptor<Future> futureArgumentCaptor = ArgumentCaptor.forClass(Future.class);
+        verify(handler).handle(futureArgumentCaptor.capture());
+        Future future = futureArgumentCaptor.getValue();
+        assertSame(exception, future.cause());
+    }
+
+    @Test
+    public void updateArticleWhenErrorDuringBegin() {
+        Exception exception = new RuntimeException();
+        mockFailedPoolBegin(exception);
+        JsonObject body = new JsonObject();
+
+        articleWebService.updateArticle(body, operationRequest, handler);
 
         ArgumentCaptor<Future> futureArgumentCaptor = ArgumentCaptor.forClass(Future.class);
         verify(handler).handle(futureArgumentCaptor.capture());

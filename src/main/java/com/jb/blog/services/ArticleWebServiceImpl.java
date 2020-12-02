@@ -18,12 +18,15 @@ import java.util.List;
 public class ArticleWebServiceImpl implements ArticleWebService {
     private final PgPool pool;
     private final ArticleRepositoryFactory articleRepositoryFactory;
+    private final ArticleMapper articleMapper;
 
     public ArticleWebServiceImpl(
             PgPool pool,
-            ArticleRepositoryFactory articleRepositoryFactory) {
+            ArticleRepositoryFactory articleRepositoryFactory,
+            ArticleMapper articleMapper) {
         this.pool = pool;
         this.articleRepositoryFactory = articleRepositoryFactory;
+        this.articleMapper = articleMapper;
     }
 
     public void getAllArticles(
@@ -98,7 +101,7 @@ public class ArticleWebServiceImpl implements ArticleWebService {
             }
             Transaction transaction = beginResult.result();
             ArticleRepository articleRepository = this.articleRepositoryFactory.create(transaction);
-            Article article = body.mapTo(Article.class);
+            Article article = articleMapper.fromJson(body);
             articleRepository.insertArticle(article, (AsyncResult<Void> insertArticleResult) -> {
                 if (insertArticleResult.failed()) {
                     transaction.rollback();
@@ -109,6 +112,49 @@ public class ArticleWebServiceImpl implements ArticleWebService {
                 OperationResponse operationResponse = new OperationResponse();
                 operationResponse.setStatusCode(204);
                 resultHandler.handle(Future.succeededFuture(operationResponse));
+            });
+        });
+    }
+
+    public void updateArticle(
+            JsonObject body,
+            OperationRequest context,
+            Handler<AsyncResult<OperationResponse>> resultHandler
+    ) {
+        pool.begin(beginResult -> {
+            if (beginResult.failed()) {
+                resultHandler.handle(Future.failedFuture(beginResult.cause()));
+                return;
+            }
+            Transaction transaction = beginResult.result();
+            ArticleRepository articleRepository = this.articleRepositoryFactory.create(transaction);
+            Article article = articleMapper.fromJson(body);
+            articleRepository.getArticleById(article.getId(), (AsyncResult<Article> getArticleByIdResult) -> {
+                if (getArticleByIdResult.failed()) {
+                    transaction.rollback();
+                    resultHandler.handle(Future.failedFuture(getArticleByIdResult.cause()));
+                    return;
+                }
+                Article articleInDb = getArticleByIdResult.result();
+                if (articleInDb == null) {
+                    transaction.rollback();
+                    OperationResponse operationResponse = new OperationResponse();
+                    operationResponse.setStatusCode(404);
+                    resultHandler.handle(Future.succeededFuture(operationResponse));
+                    return;
+                }
+
+                articleRepository.updateArticle(article, (AsyncResult<Void> updateArticleResult) -> {
+                    if (updateArticleResult.failed()) {
+                        transaction.rollback();
+                        resultHandler.handle(Future.failedFuture(updateArticleResult.cause()));
+                        return;
+                    }
+                    transaction.commit();
+                    OperationResponse operationResponse = new OperationResponse();
+                    operationResponse.setStatusCode(204);
+                    resultHandler.handle(Future.succeededFuture(operationResponse));
+                });
             });
         });
     }

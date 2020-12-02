@@ -2,12 +2,10 @@ package com.jb.blog;
 
 import com.jb.blog.persistence.ArticleRepositoryFactory;
 import com.jb.blog.persistence.ArticleRepositoryFactoryImpl;
-import com.jb.blog.services.ArticleDbConverter;
-import com.jb.blog.services.ArticleDbConverterImpl;
-import com.jb.blog.services.ArticleWebService;
-import com.jb.blog.services.ArticleWebServiceImpl;
+import com.jb.blog.services.*;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
@@ -40,7 +38,8 @@ public class MainVerticle extends AbstractVerticle {
         pool = PgPool.pool(vertx, pgConnectOptions, poolOptions);
         ArticleDbConverter articleDbConverter = new ArticleDbConverterImpl();
         ArticleRepositoryFactory articleRepositoryFactory = new ArticleRepositoryFactoryImpl(articleDbConverter);
-        ArticleWebService articleWebService = new ArticleWebServiceImpl(pool, articleRepositoryFactory);
+        ArticleMapper articleMapper = new ArticleMapperImpl();
+        ArticleWebService articleWebService = new ArticleWebServiceImpl(pool, articleRepositoryFactory, articleMapper);
 
         serviceBinder = new ServiceBinder(vertx);
         consumer = serviceBinder
@@ -53,7 +52,17 @@ public class MainVerticle extends AbstractVerticle {
                 OpenAPI3RouterFactory routerFactory = openAPI3RouterFactoryAsyncResult.result();
 
                 routerFactory.mountServicesFromExtensions();
-
+                routerFactory.addGlobalHandler(routingContext -> {
+                    routingContext.response()
+                            .putHeader("Access-Control-Allow-Origin", "*")
+                            .putHeader("Access-Control-Allow-Methods", "PUT,POST,HEAD,GET,OPTIONS")
+                            .putHeader("Access-Control-Allow-Headers", "content-type");
+                    if (routingContext.request().method().equals(HttpMethod.OPTIONS)) {
+                        routingContext.response().end();
+                        return;
+                    }
+                    routingContext.next();
+                });
                 Router router = routerFactory.getRouter();
                 router.errorHandler(500, routingContext -> {
                     Throwable e = routingContext.failure();

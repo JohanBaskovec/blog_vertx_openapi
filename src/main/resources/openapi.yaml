@@ -5,6 +5,9 @@ info:
   contact:
     email: johan@johanbaskovec.fr
   version: 0.0.0
+servers:
+  - url: localhost:8081
+    description: The server
 paths:
   /article/{id}:
     get:
@@ -24,7 +27,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Article'
+        404:
+          description: Article not found
   /article:
+    put:
+      description: Update an article
+      operationId: updateArticle
+      "x-vertx-event-bus": article_service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Article'
+      responses:
+        204:
+          description: Article updated, no content returned
+        404:
+          description: Article not found
     post:
       description: Insert an article
       operationId: insertArticle

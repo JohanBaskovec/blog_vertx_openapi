@@ -229,4 +229,51 @@ public class ArticleRepositoryImplTest {
         assertTrue(result.failed());
         assertSame(exception, result.cause());
     }
+
+
+    @Test
+    public void updateArticleWhenArticleDoesntExist() {
+        PreparedQuery<RowSet<Row>> preparedQuery = mock(PreparedQuery.class);
+
+        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        doAnswer((Answer<Void>) invocationOnMock -> {
+            Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(1);
+            handler.handle(Future.succeededFuture());
+            return null;
+        }).when(preparedQuery).execute(any(Tuple.class), any(Handler.class));
+
+        Article article = new Article();
+        Handler<AsyncResult<Void>> handler = mock(Handler.class);
+
+        articleRepository.insertArticle(article, handler);
+
+        ArgumentCaptor<AsyncResult<Void>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
+        verify(handler).handle(argumentCaptor.capture());
+        AsyncResult<Void> result = argumentCaptor.getValue();
+        assertTrue(result.succeeded());
+    }
+
+    @Test
+    public void updateArticleWhenException() {
+        PreparedQuery<RowSet<Row>> preparedQuery = mock(PreparedQuery.class);
+
+        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        Exception exception = new RuntimeException();
+        doAnswer((Answer<Void>) invocationOnMock -> {
+            Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(1);
+            handler.handle(Future.failedFuture(exception));
+            return null;
+        }).when(preparedQuery).execute(any(Tuple.class), any(Handler.class));
+
+        Article article = new Article();
+        Handler<AsyncResult<Void>> handler = mock(Handler.class);
+
+        articleRepository.updateArticle(article, handler);
+
+        ArgumentCaptor<AsyncResult<Void>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
+        verify(handler).handle(argumentCaptor.capture());
+        AsyncResult<Void> result = argumentCaptor.getValue();
+        assertTrue(result.failed());
+        assertSame(exception, result.cause());
+    }
 }
