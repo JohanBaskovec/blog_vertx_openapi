@@ -1,4 +1,4 @@
-package com.jb.blog.persistence;
+package com.jb.blog.persistence.article;
 
 import io.vertx.sqlclient.Transaction;
 

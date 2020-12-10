@@ -1,4 +1,4 @@
-package com.jb.blog.persistence;
+package com.jb.blog.persistence.article;
 
 import org.openapitools.vertxweb.server.model.Article;
 import io.vertx.core.AsyncResult;

@@ -1,7 +1,9 @@
-package com.jb.blog.services;
+package com.jb.blog.webservices;
 
-import com.jb.blog.persistence.ArticleRepository;
-import com.jb.blog.persistence.ArticleRepositoryFactory;
+import com.jb.blog.persistence.article.ArticleRepository;
+import com.jb.blog.persistence.article.ArticleRepositoryFactory;
+import com.jb.blog.services.JsonMapper;
+import io.vertx.sqlclient.SqlConnection;
 import org.openapitools.vertxweb.server.model.Article;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -18,12 +20,13 @@ import java.util.List;
 public class ArticleWebServiceImpl implements ArticleWebService {
     private final PgPool pool;
     private final ArticleRepositoryFactory articleRepositoryFactory;
-    private final ArticleMapper articleMapper;
+    private final JsonMapper<Article> articleMapper;
 
     public ArticleWebServiceImpl(
             PgPool pool,
             ArticleRepositoryFactory articleRepositoryFactory,
-            ArticleMapper articleMapper) {
+            JsonMapper<Article> articleMapper
+    ) {
         this.pool = pool;
         this.articleRepositoryFactory = articleRepositoryFactory;
         this.articleMapper = articleMapper;

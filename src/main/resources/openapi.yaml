@@ -31,6 +31,8 @@ paths:
           description: Article not found
   /article:
     put:
+      security:
+        - cookieAuth: []
       description: Update an article
       operationId: updateArticle
       "x-vertx-event-bus": article_service
@@ -46,6 +48,8 @@ paths:
         404:
           description: Article not found
     post:
+      security:
+        - cookieAuth: []
       description: Insert an article
       operationId: insertArticle
       "x-vertx-event-bus": article_service
@@ -56,12 +60,8 @@ paths:
             schema:
               $ref: '#/components/schemas/Article'
       responses:
-        200:
-          description: An article
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Article'
+        204:
+          description: Article created, no content returned
     get:
       description: Get all the articles
       operationId: getAllArticles
@@ -75,6 +75,69 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Article'
+  /register:
+    post:
+      description: Register
+      operationId: register
+      "x-vertx-event-bus": user_service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationForm'
+      responses:
+        204:
+          description: User created, no content
+  /logout:
+    post:
+      security:
+        - cookieAuth: []
+      description: Logout
+      operationId: logout
+      "x-vertx-event-bus": session_service
+      responses:
+        204:
+          description: Logout, no content
+  /me:
+    get:
+      security:
+        - cookieAuth: []
+      description: Get the current session
+      operationId: getCurrentAuthenticatedUser
+      "x-vertx-event-bus": session_service
+      responses:
+        200:
+          description: The authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /login:
+    post:
+      description: Create a new HTTP session
+      operationId: login
+      "x-vertx-event-bus": session_service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginForm'
+      responses:
+        400:
+          description: Username or password incorrect
+        200:
+          description: The authenticated user
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: JSESSIONID=abcde12345; Path=/; HttpOnly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
 
 components:
   schemas:
@@ -96,3 +159,56 @@ components:
         content:
           type: string
           nullable: false
+    LoginForm:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          nullable: false
+        password:
+          type: string
+          nullable: false
+    RegistrationForm:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          nullable: false
+        password:
+          type: string
+          nullable: false
+    User:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          nullable: false
+        password:
+          type: string
+          nullable: true
+    HttpSession:
+      type: object
+      required:
+        - id
+        - username
+      properties:
+        id:
+          type: string
+          nullable: false
+        username:
+          type: string
+          nullable: false
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: SESSIONID
+

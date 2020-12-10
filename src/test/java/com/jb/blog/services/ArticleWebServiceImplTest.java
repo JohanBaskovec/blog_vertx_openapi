@@ -1,7 +1,9 @@
 package com.jb.blog.services;
 
-import com.jb.blog.persistence.ArticleRepository;
-import com.jb.blog.persistence.ArticleRepositoryFactory;
+import com.jb.blog.persistence.article.ArticleRepository;
+import com.jb.blog.persistence.article.ArticleRepositoryFactory;
+import com.jb.blog.webservices.ArticleWebService;
+import com.jb.blog.webservices.ArticleWebServiceImpl;
 import org.openapitools.vertxweb.server.model.Article;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -32,7 +34,7 @@ public class ArticleWebServiceImplTest {
     private Transaction transaction;
 
     private ArticleRepository articleRepository;
-    private ArticleMapper articleMapper;
+    private JsonMapper<Article> articleMapper;
 
     @Before
     public void beforeEach() {
@@ -41,7 +43,7 @@ public class ArticleWebServiceImplTest {
         handler = mock(Handler.class);
         transaction = mock(Transaction.class);
         articleRepository = mock(ArticleRepository.class);
-        articleMapper = mock(ArticleMapper.class);
+        articleMapper = mock(JsonMapper.class);
         when(articleRepositoryFactory.create(transaction)).thenReturn(articleRepository);
         articleWebService = new ArticleWebServiceImpl(pool, articleRepositoryFactory, articleMapper);
         operationRequest = mock(OperationRequest.class);

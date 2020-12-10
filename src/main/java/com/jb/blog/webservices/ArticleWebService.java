@@ -1,4 +1,4 @@
-package com.jb.blog.services;
+package com.jb.blog.webservices;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;

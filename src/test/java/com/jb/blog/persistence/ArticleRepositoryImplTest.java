@@ -1,5 +1,6 @@
 package com.jb.blog.persistence;
 
+import com.jb.blog.persistence.article.ArticleRepositoryImpl;
 import com.jb.blog.services.ArticleDbConverter;
 import org.openapitools.vertxweb.server.model.Article;
 import io.vertx.core.AsyncResult;
