@@ -21,7 +21,7 @@ import org.openapitools.vertxweb.server.model.LoginForm;
 import org.openapitools.vertxweb.server.model.User;
 
 public class HttpSessionWebServiceImpl implements HttpSessionWebService {
-    private final PgPool pool;
+    private final RequestContextManagerFactory requestContextManagerFactory;
     private final JsonMapper<LoginForm> loginFormMapper;
     private final HttpSessionRepository httpSessionRepository;
     private final SessionConfiguration sessionConfiguration;
@@ -30,7 +30,7 @@ public class HttpSessionWebServiceImpl implements HttpSessionWebService {
     private final UserRepository userRepository;
 
     public HttpSessionWebServiceImpl(
-            PgPool pool,
+            RequestContextManagerFactory requestContextManagerFactory,
             JsonMapper<LoginForm> loginFormMapper,
             HttpSessionRepository httpSessionRepository,
             SessionConfiguration sessionConfiguration,
@@ -38,7 +38,7 @@ public class HttpSessionWebServiceImpl implements HttpSessionWebService {
             OperationRequestService operationRequestService,
             UserRepository userRepository
     ) {
-        this.pool = pool;
+        this.requestContextManagerFactory = requestContextManagerFactory;
         this.loginFormMapper = loginFormMapper;
         this.httpSessionRepository = httpSessionRepository;
         this.sessionConfiguration = sessionConfiguration;
@@ -52,47 +52,24 @@ public class HttpSessionWebServiceImpl implements HttpSessionWebService {
             OperationRequest operationRequest,
             Handler<AsyncResult<OperationResponse>> handler
     ) {
-        LoginForm loginForm = loginFormMapper.fromJson(body);
-        pool.getConnection(getConnectionResult -> {
-            if (getConnectionResult.failed()) {
-                handler.handle(Future.failedFuture(getConnectionResult.cause()));
-                return;
-            }
-            SqlConnection connection = getConnectionResult.result();
+        RequestContextManager requestContextManager = requestContextManagerFactory.create(operationRequest, handler);
+        requestContextManager.getContextWithoutUser(requestContext -> {
+            LoginForm loginForm = loginFormMapper.fromJson(body);
+            SqlConnection sqlConnection = requestContext.getSqlConnection();
+            String username = loginForm.getUsername();
 
             // TODO: password hashing
-            userRepository.getUserById(connection, loginForm.getUsername(), (getUserByIdResult) -> {
-                if (getUserByIdResult.failed()) {
-                    connection.close();
-                    handler.handle(Future.failedFuture(getUserByIdResult.cause()));
-                    return;
-                }
-
-                User user = getUserByIdResult.result();
-                if (user == null) {
+            userRepository.getUserById(sqlConnection, username, requestContext.createHandler((user) -> {
+                if (user == null || !user.getPassword().equals(loginForm.getPassword())) {
                     OperationResponse operationResponse = new OperationResponse();
                     operationResponse.setStatusCode(400);
-                    connection.close();
-                    handler.handle(Future.succeededFuture(operationResponse));
-                    return;
-                }
-
-                if (!user.getPassword().equals(loginForm.getPassword())) {
-                    OperationResponse operationResponse = new OperationResponse();
-                    operationResponse.setStatusCode(400);
-                    connection.close();
-                    handler.handle(Future.succeededFuture(operationResponse));
+                    requestContext.handleSuccess(operationResponse);
                     return;
                 }
 
                 Session session = httpSessionRepository.createSession();
                 session.put("username", user.getUsername());
-                httpSessionRepository.putSession(session, putSessionResult -> {
-                    if (putSessionResult.failed()) {
-                        connection.close();
-                        handler.handle(Future.failedFuture(putSessionResult.cause()));
-                        return;
-                    }
+                httpSessionRepository.putSession(session, requestContext.createHandler((Void putSessionResult) -> {
                     OperationResponse operationResponse = new OperationResponse();
                     Cookie cookie = Cookie.cookie(sessionConfiguration.sessionCookieName, session.id());
                     cookie.setPath(sessionConfiguration.sessionCookiePath);
@@ -103,10 +80,9 @@ public class HttpSessionWebServiceImpl implements HttpSessionWebService {
                     operationResponse.setStatusCode(200);
                     operationResponse.setPayload(userJsonMapper.toJson(user).toBuffer());
 
-                    connection.close();
-                    handler.handle(Future.succeededFuture(operationResponse));
-                });
-            });
+                    requestContext.handleSuccess(operationResponse);
+                }));
+            }));
         });
     }
 
@@ -115,79 +91,20 @@ public class HttpSessionWebServiceImpl implements HttpSessionWebService {
             OperationRequest operationRequest,
             Handler<AsyncResult<OperationResponse>> handler
     ) {
-        httpSessionRepository.getFromOperationRequest(operationRequest, getSessionResult -> {
-            if (getSessionResult.failed()) {
-                handler.handle(Future.failedFuture(getSessionResult.cause()));
-                return;
-            }
-            Session session = getSessionResult.result();
-            if (session == null) {
-                OperationResponse operationResponse = createLogoutResponse(operationRequest);
-                operationResponse.setStatusCode(401);
-                handler.handle(Future.succeededFuture(operationResponse));
-                return;
-            }
-            pool.getConnection(getConnectionResult -> {
-                if (getConnectionResult.failed()) {
-                    handler.handle(Future.failedFuture(getConnectionResult.cause()));
-                    return;
-                }
-                SqlClient connection = getConnectionResult.result();
-                String username = session.get("username");
-                userRepository.getUserById(connection, username, getUserResult -> {
-                    if (getUserResult.failed()) {
-                        connection.close();
-                        handler.handle(Future.failedFuture(getUserResult.cause()));
-                        return;
-                    }
-                    User user = getUserResult.result();
-                    if (user == null) {
-                        httpSessionRepository.delete(session, deleteResult -> {
-                            if (deleteResult.failed()) {
-                                connection.close();
-                                handler.handle(Future.failedFuture(deleteResult.cause()));
-                                return;
-                            }
-                            OperationResponse operationResponse = createLogoutResponse(operationRequest);
-                            operationResponse.setStatusCode(401);
-                            connection.close();
-                            handler.handle(Future.succeededFuture(operationResponse));
-                        });
-                        return;
-                    }
-
-                    connection.close();
-                    handler.handle(Future.succeededFuture(
-                            OperationResponse.completedWithJson(userJsonMapper.toJson(user))
-                    ));
-                });
-            });
+        RequestContextManager requestContextManager = requestContextManagerFactory.create(operationRequest, handler);
+        requestContextManager.getContextWithUser(requestContext -> {
+            requestContext.handleSuccess(
+                    OperationResponse.completedWithJson(userJsonMapper.toJson(requestContext.getUser()))
+            );
         });
     }
 
     @Override
     public void logout(OperationRequest operationRequest, Handler<AsyncResult<OperationResponse>> handler) {
-        httpSessionRepository.getFromOperationRequest(operationRequest, getSessionResult -> {
-            if (getSessionResult.failed()) {
-                handler.handle(Future.failedFuture(getSessionResult.cause()));
-                return;
-            }
-
-            Session session = getSessionResult.result();
-            if (session == null) {
-                OperationResponse operationResponse = new OperationResponse();
-                operationResponse.setStatusCode(401);
-                handler.handle(Future.succeededFuture(operationResponse));
-                return;
-            }
-            httpSessionRepository.delete(session, deleteSessionResult -> {
-                if (deleteSessionResult.failed()) {
-                    handler.handle(Future.failedFuture(deleteSessionResult.cause()));
-                    return;
-                }
-                OperationResponse operationResponse = createLogoutResponse(operationRequest);
-                handler.handle(Future.succeededFuture(operationResponse));
-            });
+        RequestContextManager requestContextManager = requestContextManagerFactory.create(operationRequest, handler);
+        requestContextManager.getContextWithUser(requestContext -> {
+            OperationResponse operationResponse = requestContextManager.createLogoutResponse(operationRequest);
+            requestContext.handleSuccess(operationResponse);
         });
     }
 

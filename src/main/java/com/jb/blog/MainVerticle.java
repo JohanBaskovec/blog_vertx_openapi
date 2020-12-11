@@ -49,16 +49,10 @@ public class MainVerticle extends AbstractVerticle {
         PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
         pool = PgPool.pool(vertx, pgConnectOptions, poolOptions);
 
-        ArticleDbConverter articleDbConverter = new ArticleDbConverterImpl();
-        JsonMapper<Article> articleMapper = new DefaultJsonMapperImpl<>(Article.class);
-        ArticleRepository articleRepository = new ArticleRepositoryImpl(articleDbConverter);
-        ArticleWebService articleWebService = new ArticleWebServiceImpl(pool, articleRepository, articleMapper);
-
         JsonMapper<User> userMapper = new DefaultJsonMapperImpl<>(User.class);
         LocalSessionStore localSessionStore = LocalSessionStore.create(vertx);
         SessionHandler sessionHandler = SessionHandler.create(localSessionStore);
         sessionHandler.setCookieSameSite(CookieSameSite.STRICT);
-
         SessionConfiguration sessionConfiguration = SessionConfiguration.createDefault();
         OperationRequestService operationRequestService = new OperationRequestServiceImpl();
         HttpSessionRepository httpSessionRepository = new HttpSessionRepository(
@@ -66,11 +60,25 @@ public class MainVerticle extends AbstractVerticle {
                 sessionConfiguration,
                 operationRequestService
         );
-
         UserDbConverter userDbConverter = new UserDbConverterImpl();
         UserRepository userRepository = new UserRepositoryImpl(userDbConverter);
-        HttpSessionWebService httpSessionWebService = new HttpSessionWebServiceImpl(
+
+        RequestContextManagerFactory requestContextManagerFactory = new RequestContextManagerFactory(
                 pool,
+                httpSessionRepository,
+                userRepository
+        );
+        ArticleDbConverter articleDbConverter = new ArticleDbConverterImpl();
+        JsonMapper<Article> articleMapper = new DefaultJsonMapperImpl<>(Article.class);
+        ArticleRepository articleRepository = new ArticleRepositoryImpl(articleDbConverter);
+        ArticleWebService articleWebService = new ArticleWebServiceImpl(
+                articleRepository,
+                articleMapper,
+                requestContextManagerFactory
+        );
+
+        HttpSessionWebService httpSessionWebService = new HttpSessionWebServiceImpl(
+                requestContextManagerFactory,
                 new DefaultJsonMapperImpl<>(LoginForm.class),
                 httpSessionRepository,
                 sessionConfiguration,

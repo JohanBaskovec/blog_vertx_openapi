@@ -11,24 +11,24 @@ import io.vertx.ext.web.api.generator.WebApiServiceGen;
 public interface ArticleWebService {
     void getArticleById(
             String id,
-            OperationRequest context,
-            Handler<AsyncResult<OperationResponse>> resultHandler
+            OperationRequest operationRequest,
+            Handler<AsyncResult<OperationResponse>> handler
     );
 
     void insertArticle(
             JsonObject body,
-            OperationRequest context,
-            Handler<AsyncResult<OperationResponse>> resultHandler
+            OperationRequest operationRequest,
+            Handler<AsyncResult<OperationResponse>> handler
     );
 
     void updateArticle(
             JsonObject body,
-            OperationRequest context,
-            Handler<AsyncResult<OperationResponse>> resultHandler
+            OperationRequest operationRequest,
+            Handler<AsyncResult<OperationResponse>> handler
     );
 
     void getAllArticles(
-            OperationRequest context,
-            Handler<AsyncResult<OperationResponse>> resultHandler
+            OperationRequest operationRequest,
+            Handler<AsyncResult<OperationResponse>> handler
     );
 }
