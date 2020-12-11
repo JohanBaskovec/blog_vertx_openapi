@@ -12,19 +12,16 @@ import java.util.List;
 
 public class ArticleRepositoryImpl implements ArticleRepository {
     private final ArticleDbConverter articleDbConverter;
-    private final Transaction transaction;
 
     public ArticleRepositoryImpl(
-            ArticleDbConverter articleDbConverter,
-            Transaction transaction
+            ArticleDbConverter articleDbConverter
     ) {
         this.articleDbConverter = articleDbConverter;
-        this.transaction = transaction;
     }
 
     @Override
-    public void getArticleById(String id, Handler<AsyncResult<Article>> handler) {
-        PreparedQuery<RowSet<Row>> preparedQuery = transaction.preparedQuery(
+    public void getArticleById(SqlClient sqlClient, String id, Handler<AsyncResult<Article>> handler) {
+        PreparedQuery<RowSet<Row>> preparedQuery = sqlClient.preparedQuery(
                 "select id, title, content from article where id=$1"
         );
         preparedQuery.execute(
@@ -48,10 +45,10 @@ public class ArticleRepositoryImpl implements ArticleRepository {
 
     @Override
     public void insertArticle(
-            Article article,
+            SqlClient sqlClient, Article article,
             Handler<AsyncResult<Void>> handler
     ) {
-        PreparedQuery<RowSet<Row>> preparedQuery = transaction.preparedQuery(
+        PreparedQuery<RowSet<Row>> preparedQuery = sqlClient.preparedQuery(
                 "insert into article(id, title, content) values ($1, $2, $3)"
         );
         preparedQuery.execute(
@@ -65,8 +62,8 @@ public class ArticleRepositoryImpl implements ArticleRepository {
                 });
     }
 
-    public void updateArticle(Article article, Handler<AsyncResult<Void>> handler) {
-        PreparedQuery<RowSet<Row>> preparedQuery = transaction.preparedQuery(
+    public void updateArticle(SqlClient sqlClient, Article article, Handler<AsyncResult<Void>> handler) {
+        PreparedQuery<RowSet<Row>> preparedQuery = sqlClient.preparedQuery(
                 "update article set title = $1, content = $2 where id = $3"
         );
         preparedQuery.execute(
@@ -81,8 +78,8 @@ public class ArticleRepositoryImpl implements ArticleRepository {
     }
 
     @Override
-    public void getAllArticles(Handler<AsyncResult<List<Article>>> handler) {
-        PreparedQuery<RowSet<Row>> preparedQuery = transaction.preparedQuery(
+    public void getAllArticles(SqlClient sqlClient, Handler<AsyncResult<List<Article>>> handler) {
+        PreparedQuery<RowSet<Row>> preparedQuery = sqlClient.preparedQuery(
                 "select id, title, content from article"
         );
         preparedQuery.execute((AsyncResult<RowSet<Row>> event) -> {

@@ -1,8 +1,8 @@
 package com.jb.blog;
 
 import com.jb.blog.persistence.HttpSessionRepository;
-import com.jb.blog.persistence.article.ArticleRepositoryFactory;
-import com.jb.blog.persistence.article.ArticleRepositoryFactoryImpl;
+import com.jb.blog.persistence.article.ArticleRepository;
+import com.jb.blog.persistence.article.ArticleRepositoryImpl;
 import com.jb.blog.persistence.user.UserDbConverter;
 import com.jb.blog.persistence.user.UserDbConverterImpl;
 import com.jb.blog.persistence.user.UserRepository;
@@ -50,9 +50,9 @@ public class MainVerticle extends AbstractVerticle {
         pool = PgPool.pool(vertx, pgConnectOptions, poolOptions);
 
         ArticleDbConverter articleDbConverter = new ArticleDbConverterImpl();
-        ArticleRepositoryFactory articleRepositoryFactory = new ArticleRepositoryFactoryImpl(articleDbConverter);
         JsonMapper<Article> articleMapper = new DefaultJsonMapperImpl<>(Article.class);
-        ArticleWebService articleWebService = new ArticleWebServiceImpl(pool, articleRepositoryFactory, articleMapper);
+        ArticleRepository articleRepository = new ArticleRepositoryImpl(articleDbConverter);
+        ArticleWebService articleWebService = new ArticleWebServiceImpl(pool, articleRepository, articleMapper);
 
         JsonMapper<User> userMapper = new DefaultJsonMapperImpl<>(User.class);
         LocalSessionStore localSessionStore = LocalSessionStore.create(vertx);

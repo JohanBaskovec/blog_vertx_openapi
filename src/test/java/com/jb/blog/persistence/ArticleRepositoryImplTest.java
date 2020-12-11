@@ -24,14 +24,14 @@ import static org.mockito.Mockito.*;
 
 public class ArticleRepositoryImplTest {
     ArticleDbConverter articleDbConverter;
-    Transaction transaction;
+    SqlConnection sqlConnection;
     ArticleRepositoryImpl articleRepository;
 
     @Before
     public void beforeEach() {
         articleDbConverter = mock(ArticleDbConverter.class);
-        transaction = mock(Transaction.class);
-        articleRepository = new ArticleRepositoryImpl(articleDbConverter, transaction);
+        sqlConnection = mock(SqlConnection.class);
+        articleRepository = new ArticleRepositoryImpl(articleDbConverter);
     }
 
     @Test
@@ -47,7 +47,7 @@ public class ArticleRepositoryImplTest {
         when(articleDbConverter.fromRow(row)).thenReturn(article);
 
         PreparedQuery<RowSet<Row>> preparedQuery = mock(PreparedQuery.class);
-        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        when(sqlConnection.preparedQuery(anyString())).thenReturn(preparedQuery);
         doAnswer((Answer<Void>) invocationOnMock -> {
             Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(1);
             handler.handle(Future.succeededFuture(rowSet));
@@ -55,7 +55,7 @@ public class ArticleRepositoryImplTest {
         }).when(preparedQuery).execute(any(Tuple.class), any(Handler.class));
         Handler<AsyncResult<Article>> handler = mock(Handler.class);
 
-        articleRepository.getArticleById("id", handler);
+        articleRepository.getArticleById(sqlConnection, "id", handler);
 
         ArgumentCaptor<AsyncResult<Article>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
         verify(handler).handle(argumentCaptor.capture());
@@ -70,7 +70,7 @@ public class ArticleRepositoryImplTest {
         RowSet<Row> rowSet = mock(RowSet.class);
         when(rowSet.size()).thenReturn(0);
 
-        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        when(sqlConnection.preparedQuery(anyString())).thenReturn(preparedQuery);
         doAnswer((Answer<Void>) invocationOnMock -> {
             Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(1);
             handler.handle(Future.succeededFuture(rowSet));
@@ -78,7 +78,7 @@ public class ArticleRepositoryImplTest {
         }).when(preparedQuery).execute(any(Tuple.class), any(Handler.class));
         Handler<AsyncResult<Article>> handler = mock(Handler.class);
 
-        articleRepository.getArticleById("id", handler);
+        articleRepository.getArticleById(sqlConnection, "id", handler);
 
         ArgumentCaptor<AsyncResult<Article>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
         verify(handler).handle(argumentCaptor.capture());
@@ -91,7 +91,7 @@ public class ArticleRepositoryImplTest {
     public void getArticleByIdWhenThereIsAnError() {
         PreparedQuery<RowSet<Row>> preparedQuery = mock(PreparedQuery.class);
 
-        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        when(sqlConnection.preparedQuery(anyString())).thenReturn(preparedQuery);
         Exception exception = new RuntimeException("hello");
         doAnswer((Answer<Void>) invocationOnMock -> {
             Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(1);
@@ -101,7 +101,7 @@ public class ArticleRepositoryImplTest {
 
         Handler<AsyncResult<Article>> handler = mock(Handler.class);
 
-        articleRepository.getArticleById("id", handler);
+        articleRepository.getArticleById(sqlConnection, "id", handler);
 
         ArgumentCaptor<AsyncResult<Article>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
         verify(handler).handle(argumentCaptor.capture());
@@ -114,7 +114,7 @@ public class ArticleRepositoryImplTest {
     public void insertArticleWhenSuccess() {
         PreparedQuery<RowSet<Row>> preparedQuery = mock(PreparedQuery.class);
 
-        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        when(sqlConnection.preparedQuery(anyString())).thenReturn(preparedQuery);
         doAnswer((Answer<Void>) invocationOnMock -> {
             Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(1);
             handler.handle(Future.succeededFuture());
@@ -124,7 +124,7 @@ public class ArticleRepositoryImplTest {
         Article article = new Article();
         Handler<AsyncResult<Void>> handler = mock(Handler.class);
 
-        articleRepository.insertArticle(article, handler);
+        articleRepository.insertArticle(sqlConnection, article, handler);
 
         ArgumentCaptor<AsyncResult<Void>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
         verify(handler).handle(argumentCaptor.capture());
@@ -136,7 +136,7 @@ public class ArticleRepositoryImplTest {
     public void insertArticleWhenException() {
         PreparedQuery<RowSet<Row>> preparedQuery = mock(PreparedQuery.class);
 
-        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        when(sqlConnection.preparedQuery(anyString())).thenReturn(preparedQuery);
         Exception exception = new RuntimeException();
         doAnswer((Answer<Void>) invocationOnMock -> {
             Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(1);
@@ -147,7 +147,7 @@ public class ArticleRepositoryImplTest {
         Article article = new Article();
         Handler<AsyncResult<Void>> handler = mock(Handler.class);
 
-        articleRepository.insertArticle(article, handler);
+        articleRepository.insertArticle(sqlConnection, article, handler);
 
         ArgumentCaptor<AsyncResult<Void>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
         verify(handler).handle(argumentCaptor.capture());
@@ -187,10 +187,10 @@ public class ArticleRepositoryImplTest {
         when(rowSet.iterator()).thenReturn(rowIterator);
 
         Transaction transaction = mock(Transaction.class);
-        ArticleRepositoryImpl articleRepository = new ArticleRepositoryImpl(articleDbConverter, transaction);
+        ArticleRepositoryImpl articleRepository = new ArticleRepositoryImpl(articleDbConverter);
 
         PreparedQuery<RowSet<Row>> preparedQuery = mock(PreparedQuery.class);
-        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        when(sqlConnection.preparedQuery(anyString())).thenReturn(preparedQuery);
         doAnswer((Answer<Void>) invocationOnMock -> {
             Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(0);
             handler.handle(Future.succeededFuture(rowSet));
@@ -199,7 +199,7 @@ public class ArticleRepositoryImplTest {
 
         Handler<AsyncResult<List<Article>>> handler = mock(Handler.class);
 
-        articleRepository.getAllArticles(handler);
+        articleRepository.getAllArticles(sqlConnection, handler);
 
         ArgumentCaptor<AsyncResult<List<Article>>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
         verify(handler).handle(argumentCaptor.capture());
@@ -212,7 +212,7 @@ public class ArticleRepositoryImplTest {
     public void getAllArticlesWhenException() {
         PreparedQuery<RowSet<Row>> preparedQuery = mock(PreparedQuery.class);
 
-        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        when(sqlConnection.preparedQuery(anyString())).thenReturn(preparedQuery);
         Exception exception = new RuntimeException();
         doAnswer((Answer<Void>) invocationOnMock -> {
             Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(0);
@@ -222,7 +222,7 @@ public class ArticleRepositoryImplTest {
 
         Handler<AsyncResult<List<Article>>> handler = mock(Handler.class);
 
-        articleRepository.getAllArticles(handler);
+        articleRepository.getAllArticles(sqlConnection, handler);
 
         ArgumentCaptor<AsyncResult<List<Article>>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
         verify(handler).handle(argumentCaptor.capture());
@@ -236,7 +236,7 @@ public class ArticleRepositoryImplTest {
     public void updateArticleWhenArticleDoesntExist() {
         PreparedQuery<RowSet<Row>> preparedQuery = mock(PreparedQuery.class);
 
-        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        when(sqlConnection.preparedQuery(anyString())).thenReturn(preparedQuery);
         doAnswer((Answer<Void>) invocationOnMock -> {
             Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(1);
             handler.handle(Future.succeededFuture());
@@ -246,7 +246,7 @@ public class ArticleRepositoryImplTest {
         Article article = new Article();
         Handler<AsyncResult<Void>> handler = mock(Handler.class);
 
-        articleRepository.insertArticle(article, handler);
+        articleRepository.insertArticle(sqlConnection, article, handler);
 
         ArgumentCaptor<AsyncResult<Void>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
         verify(handler).handle(argumentCaptor.capture());
@@ -258,7 +258,7 @@ public class ArticleRepositoryImplTest {
     public void updateArticleWhenException() {
         PreparedQuery<RowSet<Row>> preparedQuery = mock(PreparedQuery.class);
 
-        when(transaction.preparedQuery(anyString())).thenReturn(preparedQuery);
+        when(sqlConnection.preparedQuery(anyString())).thenReturn(preparedQuery);
         Exception exception = new RuntimeException();
         doAnswer((Answer<Void>) invocationOnMock -> {
             Handler<AsyncResult<RowSet<Row>>> handler = invocationOnMock.getArgument(1);
@@ -269,7 +269,7 @@ public class ArticleRepositoryImplTest {
         Article article = new Article();
         Handler<AsyncResult<Void>> handler = mock(Handler.class);
 
-        articleRepository.updateArticle(article, handler);
+        articleRepository.updateArticle(sqlConnection, article, handler);
 
         ArgumentCaptor<AsyncResult<Void>> argumentCaptor = ArgumentCaptor.forClass(AsyncResult.class);
         verify(handler).handle(argumentCaptor.capture());
