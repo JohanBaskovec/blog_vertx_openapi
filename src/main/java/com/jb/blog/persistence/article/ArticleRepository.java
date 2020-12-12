@@ -4,6 +4,7 @@ import io.vertx.sqlclient.SqlClient;
 import org.openapitools.vertxweb.server.model.Article;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import org.openapitools.vertxweb.server.model.EntityVersionId;
 
 import java.util.List;
 

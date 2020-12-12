@@ -18,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.openapitools.vertxweb.server.model.Article;
+import org.openapitools.vertxweb.server.model.ArticleCreationRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,7 @@ public class ArticleWebServiceImplTest {
     private SqlConnection sqlConnection;
 
     private JsonMapper<Article> articleMapper;
+    private JsonMapper<ArticleCreationRequest> articleCreationRequestJsonMapper;
     private RequestContextManagerFactory requestContextManagerFactory;
     private RequestContextManager requestContextManager;
     private RequestContext requestContext;
@@ -45,12 +47,13 @@ public class ArticleWebServiceImplTest {
         sqlConnection = mock(SqlConnection.class);
         articleRepository = mock(ArticleRepository.class);
         articleMapper = mock(JsonMapper.class);
+        articleCreationRequestJsonMapper = mock(JsonMapper.class);
         requestContextManagerFactory = mock(RequestContextManagerFactory.class);
         requestContextManager = mock(RequestContextManager.class);
         requestContext = mock(RequestContext.class);
         operationRequest = mock(OperationRequest.class);
         when(requestContextManagerFactory.create(operationRequest, handler)).thenReturn(requestContextManager);
-        articleWebService = new ArticleWebServiceImpl(articleRepository, articleMapper, requestContextManagerFactory);
+        articleWebService = new ArticleWebServiceImpl(articleRepository, articleCreationRequestJsonMapper, requestContextManagerFactory);
     }
 
     private void mockRequestContextWithConnection() {

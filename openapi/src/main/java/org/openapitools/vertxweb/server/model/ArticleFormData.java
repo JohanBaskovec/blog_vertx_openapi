@@ -3,27 +3,22 @@ package org.openapitools.vertxweb.server.model;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.openapitools.vertxweb.server.model.User;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Article   {
+public class ArticleFormData   {
   
   private String id;
   private String title;
   private String content;
-  private User author = null;
-  private Integer version;
 
-  public Article () {
+  public ArticleFormData () {
 
   }
 
-  public Article (String id, String title, String content, User author, Integer version) {
+  public ArticleFormData (String id, String title, String content) {
     this.id = id;
     this.title = title;
     this.content = content;
-    this.author = author;
-    this.version = version;
   }
 
     
@@ -53,24 +48,6 @@ public class Article   {
     this.content = content;
   }
 
-    
-  @JsonProperty("author")
-  public User getAuthor() {
-    return author;
-  }
-  public void setAuthor(User author) {
-    this.author = author;
-  }
-
-    
-  @JsonProperty("version")
-  public Integer getVersion() {
-    return version;
-  }
-  public void setVersion(Integer version) {
-    this.version = version;
-  }
-
 
   @Override
   public boolean equals(Object o) {
@@ -80,29 +57,25 @@ public class Article   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    Article article = (Article) o;
-    return Objects.equals(id, article.id) &&
-        Objects.equals(title, article.title) &&
-        Objects.equals(content, article.content) &&
-        Objects.equals(author, article.author) &&
-        Objects.equals(version, article.version);
+    ArticleFormData articleFormData = (ArticleFormData) o;
+    return Objects.equals(id, articleFormData.id) &&
+        Objects.equals(title, articleFormData.title) &&
+        Objects.equals(content, articleFormData.content);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, title, content, author, version);
+    return Objects.hash(id, title, content);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class Article {\n");
+    sb.append("class ArticleFormData {\n");
     
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    title: ").append(toIndentedString(title)).append("\n");
     sb.append("    content: ").append(toIndentedString(content)).append("\n");
-    sb.append("    author: ").append(toIndentedString(author)).append("\n");
-    sb.append("    version: ").append(toIndentedString(version)).append("\n");
     sb.append("}");
     return sb.toString();
   }

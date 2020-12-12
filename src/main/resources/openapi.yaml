@@ -41,7 +41,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Article'
+              $ref: '#/components/schemas/ArticleFormData'
       responses:
         204:
           description: Article updated, no content returned
@@ -58,7 +58,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Article'
+              $ref: '#/components/schemas/ArticleFormData'
       responses:
         204:
           description: Article created, no content returned
@@ -144,7 +144,62 @@ components:
     ObjectId:
       type: string
       nullable: false
+    ServerError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          nullable: false
+    ValidationError:
+      type: object
+      required:
+        - message
+        - parameterName
+      properties:
+        message:
+          type: string
+          nullable: false
+        parameterName:
+          type: string
+          nullable: false
+    ClientError:
+      type: object
+      required:
+        - message
+        - parameterName
+      properties:
+        message:
+          type: string
+          nullable: false
+        parameterName:
+          type: string
+          nullable: false
     Article:
+      type: object
+      required:
+        - id
+        - title
+        - content
+        - version
+        - author
+      properties:
+        id:
+          $ref: '#/components/schemas/ObjectId'
+        title:
+          type: string
+          nullable: false
+        content:
+          type: string
+          nullable: false
+        author:
+          type: User
+          nullable: false
+        version:
+          type: integer
+          nullable: false
+    ArticleFormData:
       type: object
       required:
         - id
@@ -187,6 +242,7 @@ components:
       type: object
       required:
         - username
+        - version
       properties:
         username:
           type: string
@@ -194,6 +250,9 @@ components:
         password:
           type: string
           nullable: true
+        version:
+          type: integer
+          nullable: false
     HttpSession:
       type: object
       required:

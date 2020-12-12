@@ -5,38 +5,27 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class User   {
+public class EntityVersionId   {
   
-  private String username;
-  private String password;
+  private String id;
   private Integer version;
 
-  public User () {
+  public EntityVersionId () {
 
   }
 
-  public User (String username, String password, Integer version) {
-    this.username = username;
-    this.password = password;
+  public EntityVersionId (String id, Integer version) {
+    this.id = id;
     this.version = version;
   }
 
     
-  @JsonProperty("username")
-  public String getUsername() {
-    return username;
+  @JsonProperty("id")
+  public String getId() {
+    return id;
   }
-  public void setUsername(String username) {
-    this.username = username;
-  }
-
-    
-  @JsonProperty("password")
-  public String getPassword() {
-    return password;
-  }
-  public void setPassword(String password) {
-    this.password = password;
+  public void setId(String id) {
+    this.id = id;
   }
 
     
@@ -57,24 +46,22 @@ public class User   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    User user = (User) o;
-    return Objects.equals(username, user.username) &&
-        Objects.equals(password, user.password) &&
-        Objects.equals(version, user.version);
+    EntityVersionId entityVersionId = (EntityVersionId) o;
+    return Objects.equals(id, entityVersionId.id) &&
+        Objects.equals(version, entityVersionId.version);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(username, password, version);
+    return Objects.hash(id, version);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class User {\n");
+    sb.append("class EntityVersionId {\n");
     
-    sb.append("    username: ").append(toIndentedString(username)).append("\n");
-    sb.append("    password: ").append(toIndentedString(password)).append("\n");
+    sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    version: ").append(toIndentedString(version)).append("\n");
     sb.append("}");
     return sb.toString();
