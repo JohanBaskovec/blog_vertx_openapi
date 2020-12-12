@@ -18,7 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.openapitools.vertxweb.server.model.Article;
-import org.openapitools.vertxweb.server.model.ArticleCreationRequest;
+import org.openapitools.vertxweb.server.model.ArticleFormData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +34,7 @@ public class ArticleWebServiceImplTest {
     private Handler<AsyncResult<OperationResponse>> handler;
     private SqlConnection sqlConnection;
 
-    private JsonMapper<Article> articleMapper;
-    private JsonMapper<ArticleCreationRequest> articleCreationRequestJsonMapper;
+    private JsonMapper<ArticleFormData> articleFormDataJsonMapper;
     private RequestContextManagerFactory requestContextManagerFactory;
     private RequestContextManager requestContextManager;
     private RequestContext requestContext;
@@ -46,14 +45,13 @@ public class ArticleWebServiceImplTest {
         handler = mock(Handler.class);
         sqlConnection = mock(SqlConnection.class);
         articleRepository = mock(ArticleRepository.class);
-        articleMapper = mock(JsonMapper.class);
-        articleCreationRequestJsonMapper = mock(JsonMapper.class);
+        articleFormDataJsonMapper = mock(JsonMapper.class);
         requestContextManagerFactory = mock(RequestContextManagerFactory.class);
         requestContextManager = mock(RequestContextManager.class);
         requestContext = mock(RequestContext.class);
         operationRequest = mock(OperationRequest.class);
         when(requestContextManagerFactory.create(operationRequest, handler)).thenReturn(requestContextManager);
-        articleWebService = new ArticleWebServiceImpl(articleRepository, articleCreationRequestJsonMapper, requestContextManagerFactory);
+        articleWebService = new ArticleWebServiceImpl(articleRepository, articleFormDataJsonMapper, requestContextManagerFactory);
     }
 
     private void mockRequestContextWithConnection() {
@@ -110,7 +108,7 @@ public class ArticleWebServiceImplTest {
             Handler<AsyncResult<List<Article>>> handler = invocationOnMock.getArgument(1);
             handler.handle(Future.succeededFuture(articles));
             return null;
-        }).when(articleRepository).getAllArticles(eq(sqlConnection), any(Handler.class));
+        }).when(articleRepository).getAll(eq(sqlConnection), any(Handler.class));
 
         // act
         articleWebService.getAllArticles(operationRequest, handler);
@@ -140,7 +138,7 @@ public class ArticleWebServiceImplTest {
             Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(2);
             handler.handle(Future.succeededFuture(article));
             return null;
-        }).when(articleRepository).getArticleById(eq(sqlConnection), eq(id), any(Handler.class));
+        }).when(articleRepository).getById(eq(sqlConnection), eq(id), any(Handler.class));
 
         // act
         articleWebService.getArticleById(id, operationRequest, handler);
@@ -165,7 +163,7 @@ public class ArticleWebServiceImplTest {
             Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(2);
             handler.handle(Future.succeededFuture(null));
             return null;
-        }).when(articleRepository).getArticleById(eq(sqlConnection), eq(id), any(Handler.class));
+        }).when(articleRepository).getById(eq(sqlConnection), eq(id), any(Handler.class));
 
         // act
         articleWebService.getArticleById(id, operationRequest, handler);
@@ -182,13 +180,13 @@ public class ArticleWebServiceImplTest {
         // arrange
         mockGetContextWithUser();
         JsonObject body = new JsonObject();
-        Article article = new Article();
-        when(articleMapper.fromJson(body)).thenReturn(article);
+        ArticleFormData article = new ArticleFormData();
+        when(articleFormDataJsonMapper.fromJson(body)).thenReturn(article);
         doAnswer(invocationOnMock -> {
             Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(2);
             handler.handle(Future.succeededFuture());
             return null;
-        }).when(articleRepository).insertArticle(eq(sqlConnection), any(Article.class), any(Handler.class));
+        }).when(articleRepository).insert(eq(sqlConnection), any(Article.class), any(Handler.class));
 
         // act
         articleWebService.insertArticle(body, operationRequest, handler);
@@ -205,19 +203,20 @@ public class ArticleWebServiceImplTest {
         // arrange
         mockGetContextWithUser();
         JsonObject body = new JsonObject();
+        ArticleFormData articleFormData = new ArticleFormData();
+        articleFormData.setId("id");
+        when(articleFormDataJsonMapper.fromJson(body)).thenReturn(articleFormData);
         Article article = new Article();
-        article.setId("id");
-        when(articleMapper.fromJson(body)).thenReturn(article);
         doAnswer(invocationOnMock -> {
             Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(2);
             handler.handle(Future.succeededFuture(article));
             return null;
-        }).when(articleRepository).getArticleById(eq(sqlConnection), eq(article.getId()), any(Handler.class));
+        }).when(articleRepository).getById(eq(sqlConnection), eq(articleFormData.getId()), any(Handler.class));
         doAnswer(invocationOnMock -> {
             Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(2);
             handler.handle(Future.succeededFuture());
             return null;
-        }).when(articleRepository).updateArticle(eq(sqlConnection), any(Article.class), any(Handler.class));
+        }).when(articleRepository).update(eq(sqlConnection), any(Article.class), any(Handler.class));
 
         // act
         articleWebService.updateArticle(body, operationRequest, handler);
@@ -234,14 +233,14 @@ public class ArticleWebServiceImplTest {
         // arrange
         mockGetContextWithUser();
         JsonObject body = new JsonObject();
-        Article article = new Article();
-        article.setId("id");
-        when(articleMapper.fromJson(body)).thenReturn(article);
+        ArticleFormData articleFormData = new ArticleFormData();
+        articleFormData.setId("id");
+        when(articleFormDataJsonMapper.fromJson(body)).thenReturn(articleFormData);
         doAnswer(invocationOnMock -> {
             Handler<AsyncResult<Article>> handler = invocationOnMock.getArgument(2);
             handler.handle(Future.succeededFuture(null));
             return null;
-        }).when(articleRepository).getArticleById(eq(sqlConnection), eq(article.getId()), any(Handler.class));
+        }).when(articleRepository).getById(eq(sqlConnection), eq(articleFormData.getId()), any(Handler.class));
 
         // act
         articleWebService.updateArticle(body, operationRequest, handler);

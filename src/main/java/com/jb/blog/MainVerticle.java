@@ -66,12 +66,11 @@ public class MainVerticle extends AbstractVerticle {
                 httpSessionRepository,
                 userRepository
         );
-        ArticleDbConverter articleDbConverter = new ArticleDbConverterImpl();
-        JsonMapper<ArticleCreationRequest> articleCreationRequestJsonMapper = new DefaultJsonMapperImpl<>(ArticleCreationRequest.class);
-        ArticleRepository articleRepository = new ArticleRepositoryImpl(articleDbConverter);
+        JsonMapper<ArticleFormData> articleFormDataJsonMapper = new DefaultJsonMapperImpl<>(ArticleFormData.class);
+        ArticleRepository articleRepository = new ArticleRepositoryImpl();
         ArticleWebService articleWebService = new ArticleWebServiceImpl(
                 articleRepository,
-                articleCreationRequestJsonMapper,
+                articleFormDataJsonMapper,
                 requestContextManagerFactory
         );
 

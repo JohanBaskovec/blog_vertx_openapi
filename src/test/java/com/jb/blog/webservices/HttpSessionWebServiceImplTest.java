@@ -180,7 +180,10 @@ public class HttpSessionWebServiceImplTest {
         OperationResponse operationResponse = futureArgumentCaptor.getValue();
         assertEquals(200, (int) operationResponse.getStatusCode());
         assertSame(userAsJsonBuffer, operationResponse.getPayload());
-        assertEquals("Set-Cookie: vertx-web.session=sessionid; Path=/\n", operationResponse.getHeaders().toString());
+        String headers = operationResponse.getHeaders().toString();
+        String regex = "Set-Cookie: vertx-web\\.session=sessionid; Max-Age=10000000; Expires=.*; Path=/\n";
+        boolean match = headers.matches(regex);
+        assertTrue(match);
         verify(session).put("username", user.getUsername());
     }
 
