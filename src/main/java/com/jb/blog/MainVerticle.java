@@ -13,6 +13,7 @@ import com.jb.blog.webservices.*;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
@@ -23,10 +24,7 @@ import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.serviceproxy.ServiceBinder;
 import io.vertx.sqlclient.PoolOptions;
-import org.openapitools.vertxweb.server.model.Article;
-import org.openapitools.vertxweb.server.model.LoginForm;
-import org.openapitools.vertxweb.server.model.RegistrationForm;
-import org.openapitools.vertxweb.server.model.User;
+import org.openapitools.vertxweb.server.model.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -69,11 +67,11 @@ public class MainVerticle extends AbstractVerticle {
                 userRepository
         );
         ArticleDbConverter articleDbConverter = new ArticleDbConverterImpl();
-        JsonMapper<Article> articleMapper = new DefaultJsonMapperImpl<>(Article.class);
+        JsonMapper<ArticleCreationRequest> articleCreationRequestJsonMapper = new DefaultJsonMapperImpl<>(ArticleCreationRequest.class);
         ArticleRepository articleRepository = new ArticleRepositoryImpl(articleDbConverter);
         ArticleWebService articleWebService = new ArticleWebServiceImpl(
                 articleRepository,
-                articleMapper,
+                articleCreationRequestJsonMapper,
                 requestContextManagerFactory
         );
 
@@ -120,9 +118,10 @@ public class MainVerticle extends AbstractVerticle {
                 routerFactory.mountServicesFromExtensions();
                 routerFactory.addGlobalHandler(routingContext -> {
                     routingContext.response()
-                            .putHeader("Access-Control-Allow-Origin", "*")
+                            .putHeader("Access-Control-Allow-Origin", "http://localhost:3000")
                             .putHeader("Access-Control-Allow-Methods", "PUT,POST,HEAD,GET,OPTIONS")
-                            .putHeader("Access-Control-Allow-Headers", "content-type");
+                            .putHeader("Access-Control-Allow-Credentials", "true")
+                            .putHeader("Access-Control-Allow-Headers", "content-type, cookie");
                     if (routingContext.request().method().equals(HttpMethod.OPTIONS)) {
                         routingContext.response().end();
                         return;
@@ -133,24 +132,21 @@ public class MainVerticle extends AbstractVerticle {
                 router.errorHandler(500, routingContext -> {
                     Throwable e = routingContext.failure();
                     e.printStackTrace();
-                    JsonObject responseJson = new JsonObject()
-                            .put("message", e.getMessage());
+                    ServerError serverError = new ServerError(e.getMessage());
                     HttpServerResponse response = routingContext.response();
                     response.putHeader("content-type", "application/json");
                     response.setStatusCode(500)
-                            .end(responseJson.toString());
+                            .end(Json.encode(serverError));
                 });
                 router.errorHandler(400, routingContext -> {
                     if (routingContext.failure() instanceof ValidationException) {
                         // Something went wrong during validation!
                         ValidationException e = (ValidationException) routingContext.failure();
-                        JsonObject responseJson = new JsonObject()
-                                .put("message", e.getMessage())
-                                .put("parameterName", e.parameterName());
+                        ValidationError validationError = new ValidationError(e.getMessage(), e.parameterName());
                         HttpServerResponse response = routingContext.response();
                         response.putHeader("content-type", "application/json");
                         response.setStatusCode(400)
-                                .end(responseJson.toString());
+                                .end(Json.encode(validationError));
                     } else {
                         // Unknown 400 failure happened
                         routingContext.response().setStatusCode(400).end();

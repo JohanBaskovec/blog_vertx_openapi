@@ -6,6 +6,6 @@ import org.openapitools.vertxweb.server.model.User;
 public class RegistrationFormServiceImpl implements RegistrationFormService {
     @Override
     public User toUser(RegistrationForm registrationForm) {
-        return new User(registrationForm.getUsername(), registrationForm.getPassword());
+        return new User(registrationForm.getUsername(), registrationForm.getPassword(), 0);
     }
 }

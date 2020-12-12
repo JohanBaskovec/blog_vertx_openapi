@@ -9,19 +9,22 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.api.OperationRequest;
 import io.vertx.ext.web.api.OperationResponse;
 import org.openapitools.vertxweb.server.model.Article;
+import org.openapitools.vertxweb.server.model.ArticleCreationRequest;
+import org.openapitools.vertxweb.server.model.EntityVersionId;
+import org.openapitools.vertxweb.server.model.User;
 
 public class ArticleWebServiceImpl implements ArticleWebService {
     private final ArticleRepository articleRepository;
-    private final JsonMapper<Article> articleMapper;
+    private final JsonMapper<ArticleCreationRequest> articleCreationRequestJsonMapper;
     private final RequestContextManagerFactory requestContextManagerFactory;
 
     public ArticleWebServiceImpl(
             ArticleRepository articleRepository,
-            JsonMapper<Article> articleMapper,
+            JsonMapper<ArticleCreationRequest> articleCreationRequestJsonMapper,
             RequestContextManagerFactory requestContextManagerFactory
     ) {
         this.articleRepository = articleRepository;
-        this.articleMapper = articleMapper;
+        this.articleCreationRequestJsonMapper = articleCreationRequestJsonMapper;
         this.requestContextManagerFactory = requestContextManagerFactory;
     }
 
@@ -58,7 +61,8 @@ public class ArticleWebServiceImpl implements ArticleWebService {
                             return;
                         }
 
-                        requestContext.handleSuccess(OperationResponse.completedWithJson(JsonObject.mapFrom(article)));
+                        JsonObject jsonObject = JsonObject.mapFrom(article);
+                        requestContext.handleSuccess(OperationResponse.completedWithJson(jsonObject));
                     }));
         });
     }
@@ -70,7 +74,13 @@ public class ArticleWebServiceImpl implements ArticleWebService {
     ) {
         RequestContextManager requestContextManager = requestContextManagerFactory.create(operationRequest, handler);
         requestContextManager.getContextWithUser(requestContext -> {
-            Article article = articleMapper.fromJson(body);
+            ArticleCreationRequest articleCreationRequest = articleCreationRequestJsonMapper.fromJson(body);
+            User user = requestContext.getUser();
+            Article article = new Article();
+            article.setId(articleCreationRequest.getId());
+            article.setContent(articleCreationRequest.getContent());
+            article.setTitle(articleCreationRequest.getTitle());
+            article.setAuthor(user);
             articleRepository.insertArticle(
                     requestContext.getSqlConnection(),
                     article,
@@ -89,10 +99,10 @@ public class ArticleWebServiceImpl implements ArticleWebService {
     ) {
         RequestContextManager requestContextManager = requestContextManagerFactory.create(operationRequest, handler);
         requestContextManager.getContextWithUser(requestContext -> {
-            Article article = articleMapper.fromJson(body);
+            ArticleCreationRequest articleCreationRequest = articleCreationRequestJsonMapper.fromJson(body);
             articleRepository.getArticleById(
                     requestContext.getSqlConnection(),
-                    article.getId(),
+                    articleCreationRequest.getId(),
                     requestContext.createHandler((articleInDb) -> {
                         if (articleInDb == null) {
                             OperationResponse operationResponse = new OperationResponse();
@@ -100,10 +110,12 @@ public class ArticleWebServiceImpl implements ArticleWebService {
                             requestContext.handleSuccess(operationResponse);
                             return;
                         }
+                        articleInDb.setContent(articleCreationRequest.getContent());
+                        articleInDb.setTitle(articleCreationRequest.getTitle());
 
                         articleRepository.updateArticle(
                                 requestContext.getSqlConnection(),
-                                article,
+                                articleInDb,
                                 requestContext.createHandler((Void updateArticleResult) -> {
                                     OperationResponse operationResponse = new OperationResponse();
                                     operationResponse.setStatusCode(204);

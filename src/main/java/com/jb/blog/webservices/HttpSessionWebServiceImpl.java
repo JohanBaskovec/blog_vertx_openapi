@@ -76,6 +76,7 @@ public class HttpSessionWebServiceImpl implements HttpSessionWebService {
                     cookie.setSecure(sessionConfiguration.sessionCookieSecure);
                     cookie.setHttpOnly(sessionConfiguration.sessionCookieHttpOnly);
                     cookie.setSameSite(sessionConfiguration.cookieSameSite);
+                    cookie.setMaxAge(10000000);
                     operationResponse.putHeader("Set-Cookie", cookie.encode());
                     operationResponse.setStatusCode(200);
                     operationResponse.setPayload(userJsonMapper.toJson(user).toBuffer());

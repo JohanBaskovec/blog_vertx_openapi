@@ -23,7 +23,7 @@ public class UserRepositoryImpl implements UserRepository {
             Handler<AsyncResult<User>> handler
     ) {
         PreparedQuery<RowSet<Row>> preparedQuery = sqlClient.preparedQuery(
-                "select username, password from \"user\" where username=$1"
+                "select username, password from appuser where username=$1"
         );
         preparedQuery.execute(
                 Tuple.of(id),
@@ -51,7 +51,7 @@ public class UserRepositoryImpl implements UserRepository {
             Handler<AsyncResult<Void>> handler
     ) {
         PreparedQuery<RowSet<Row>> preparedQuery = sqlClient.preparedQuery(
-                "insert into \"user\"(username, password, password_salt) values ($1, $2, $3)"
+                "insert into appuser(username, password, password_salt) values ($1, $2, $3)"
         );
         preparedQuery.execute(
                 Tuple.of(user.getUsername(), user.getPassword(), user.getPassword()),
